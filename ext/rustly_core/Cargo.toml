@@ -1,0 +1,17 @@
+[package]
+name = "rustly_core"
+version = "0.1.0"
+edition = "2024"
+authors = ["dude <skuf@justregulardude.ru>"]
+license = "MIT"
+publish = false
+rust-version = "1.85"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+rb-sys = { version = "0.9.117", features = ["link-ruby", "stable-api"] }
+
+[build-dependencies]
+rb-sys-build = "0.9.117"

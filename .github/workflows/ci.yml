@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - trunk
+  pull_request:
+    branches:
+      - "*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.85.0
+          components: rustfmt, clippy
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2
+          bundler-cache: true
+      - name: Run rubocop
+        run: bundle exec rubocop
+      - name: cargo fmt
+        run: cargo fmt --manifest-path Cargo.toml -- --check
+      - name: cargo clippy
+        run: cargo clippy --manifest-path Cargo.toml --all-targets -- -D warnings
+      - name: cargo test
+        run: cargo test --manifest-path Cargo.toml
+      - name: cargo deny
+        uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          command: check
+          manifest-path: Cargo.toml
+
+  ruby:
+    name: Ruby ${{ matrix.ruby }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+        ruby:
+          - "3.2"
+          - "3.3"
+          - "3.4"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.85.0
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - name: Compile extension
+        run: bundle exec rake compile
+      - name: Run specs
+        run: bundle exec rspec

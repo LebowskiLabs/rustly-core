@@ -1,0 +1,4 @@
+# This workspace manifest helps IDEs and tooling recognize the Rust extension project.
+[workspace]
+members = ["ext/rustly_core"]
+resolver = "2"

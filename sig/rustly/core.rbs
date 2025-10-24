@@ -1,0 +1,31 @@
+module Rustly
+  module Core
+    VERSION: String
+    DEFAULT_BUILD_OPTIONS: { strict: bool, extra: Symbol }
+
+    def self.version: () -> String
+    def self.compile: (untyped) -> Rustly::Core::CompiledSchema
+    def self.native_build: (
+      Rustly::Core::CompiledSchema,
+      untyped,
+      Hash[Symbol, untyped],
+      untyped
+    ) -> [bool, untyped]
+    def self.build: (
+      Rustly::Core::CompiledSchema,
+      untyped,
+      Hash[Symbol, untyped],
+      untyped
+    ) -> [bool, untyped]
+
+    class CompiledSchema
+      def id: () -> Integer
+      def summary: () -> String
+    end
+
+    class ErrorSet
+      def messages: () -> Array[String]
+      def to_a: () -> Array[String]
+    end
+  end
+end
