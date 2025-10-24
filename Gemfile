@@ -6,11 +6,16 @@ source "https://rubygems.org"
 gemspec
 
 group :development do
+  gem "benchmark"
+  gem "benchmark-memory"
   gem "bundler"
-  gem "irb"
-  gem "rake", "~> 13.0"
-  gem "rake-compiler", "~> 1.2"
-  gem "rspec", "~> 3.13"
-  gem "rubocop", "~> 1.68"
-  gem "rubocop-rspec", "~> 3.0"
+  gem "dry-struct"
+  gem "pry"
+  gem "rake"
+  gem "rake-compiler"
+  gem "rspec"
+  gem "rspec-json_matcher"
+  gem "rubocop"
+  gem "rubocop-rspec"
+  gem "smart_value-object"
 end

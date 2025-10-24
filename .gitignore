@@ -8,4 +8,5 @@
 /vendor/
 /.rspec_status
 /target/
+/lib/rustly_core/
 Gemfile.lock

@@ -1,17 +1,23 @@
 [package]
-name = "rustly_core"
-version = "0.1.0"
-edition = "2024"
-authors = ["dude <skuf@justregulardude.ru>"]
-license = "MIT"
-publish = false
+authors      = ["dude <skuf@justregulardude.ru>"]
+edition      = "2024"
+license      = "MIT"
+name         = "rustly_core"
+publish      = false
 rust-version = "1.85"
+version      = "0.1.0"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-rb-sys = { version = "0.9.117", features = ["link-ruby", "stable-api"] }
+bumpalo       = { version = "3.19.0", features = ["collections"] }
+ordered-float = "5.1.0"
+rb-sys        = { version = "0.9.117", features = ["link-ruby", "stable-api"] }
+serde         = { version = "1.0.228", features = ["derive"] }
+serde_json    = "1.0.145"
+smallvec      = "1.13.2"
+thiserror     = "2.0.17"
 
 [build-dependencies]
 rb-sys-build = "0.9.117"

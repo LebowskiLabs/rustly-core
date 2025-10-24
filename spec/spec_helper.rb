@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rustly/core"
+require "rspec/json_matcher"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
@@ -16,4 +17,6 @@ RSpec.configure do |config|
   config.expect_with :rspec do |c|
     c.syntax = :expect
   end
+
+  config.include(RSpec::JsonMatcher)
 end
