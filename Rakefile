@@ -6,7 +6,7 @@ require "rb_sys/extensiontask"
 
 SPEC = Gem::Specification.load("rustly-core.gemspec")
 
-RbSys::ExtensionTask.new("rustly_core", SPEC) do |ext|
+RbSys::ExtensionTask.new("rustly-core", SPEC) do |ext|
   ext.lib_dir = "lib/rustly_core"
 end
 

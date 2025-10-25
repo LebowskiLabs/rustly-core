@@ -495,19 +495,19 @@ impl Validator {
         value: i64,
         constraints: &crate::schema::ir::IntConstraints,
     ) {
-        if let Some(min) = constraints.min {
-            if value < min {
-                let mut meta = JsonMap::new();
-                meta.insert("min".into(), JsonValue::from(min));
-                self.push_issue("too_small", meta);
-            }
+        if let Some(min) = constraints.min
+            && value < min
+        {
+            let mut meta = JsonMap::new();
+            meta.insert("min".into(), JsonValue::from(min));
+            self.push_issue("too_small", meta);
         }
-        if let Some(max) = constraints.max {
-            if value > max {
-                let mut meta = JsonMap::new();
-                meta.insert("max".into(), JsonValue::from(max));
-                self.push_issue("too_large", meta);
-            }
+        if let Some(max) = constraints.max
+            && value > max
+        {
+            let mut meta = JsonMap::new();
+            meta.insert("max".into(), JsonValue::from(max));
+            self.push_issue("too_large", meta);
         }
     }
 
@@ -540,19 +540,19 @@ impl Validator {
 
     fn apply_string_constraints(&mut self, value: &str, constraints: &StringConstraints) {
         let len = value.chars().count();
-        if let Some(min_len) = constraints.min_size {
-            if len < min_len {
-                let mut meta = JsonMap::new();
-                meta.insert("min".into(), JsonValue::from(min_len as i64));
-                self.push_issue("too_short", meta);
-            }
+        if let Some(min_len) = constraints.min_size
+            && len < min_len
+        {
+            let mut meta = JsonMap::new();
+            meta.insert("min".into(), JsonValue::from(min_len as i64));
+            self.push_issue("too_short", meta);
         }
-        if let Some(max_len) = constraints.max_size {
-            if len > max_len {
-                let mut meta = JsonMap::new();
-                meta.insert("max".into(), JsonValue::from(max_len as i64));
-                self.push_issue("too_long", meta);
-            }
+        if let Some(max_len) = constraints.max_size
+            && len > max_len
+        {
+            let mut meta = JsonMap::new();
+            meta.insert("max".into(), JsonValue::from(max_len as i64));
+            self.push_issue("too_long", meta);
         }
 
         if let Some(format) = constraints.format {
@@ -561,19 +561,19 @@ impl Validator {
     }
 
     fn apply_collection_constraints(&mut self, length: usize, constraints: &CollectionConstraints) {
-        if let Some(min) = constraints.min_size {
-            if length < min {
-                let mut meta = JsonMap::new();
-                meta.insert("min".into(), JsonValue::from(min as i64));
-                self.push_issue("too_short", meta);
-            }
+        if let Some(min) = constraints.min_size
+            && length < min
+        {
+            let mut meta = JsonMap::new();
+            meta.insert("min".into(), JsonValue::from(min as i64));
+            self.push_issue("too_short", meta);
         }
-        if let Some(max) = constraints.max_size {
-            if length > max {
-                let mut meta = JsonMap::new();
-                meta.insert("max".into(), JsonValue::from(max as i64));
-                self.push_issue("too_long", meta);
-            }
+        if let Some(max) = constraints.max_size
+            && length > max
+        {
+            let mut meta = JsonMap::new();
+            meta.insert("max".into(), JsonValue::from(max as i64));
+            self.push_issue("too_long", meta);
         }
     }
 

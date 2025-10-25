@@ -2,9 +2,9 @@
 authors      = ["dude <skuf@justregulardude.ru>"]
 edition      = "2024"
 license      = "MIT"
-name         = "rustly_core"
+name         = "rustly-core"
 publish      = false
-rust-version = "1.85"
+rust-version = "1.90"
 version      = "0.1.0"
 
 [lib]

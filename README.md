@@ -21,7 +21,7 @@ and materialises Ruby objects with minimal crossing overhead.
 ## Requirements
 
 - Ruby 3.2 – 3.4 (CI covers Linux and macOS).
-- Rust 1.85 (minimum supported Rust version).
+- Rust 1.90 (minimum supported Rust version).
 - Bundler 2.5 or newer.
 
 ## Quick Start
@@ -69,7 +69,7 @@ need them.
 - `ext/rustly_core` – Rust sources (`cdylib`) and Cargo configuration.
 - `lib/rustly` – Ruby wrapper and helpers (`DEFAULT_OPTIONS`, normalised options).
 - `spec/` – RSpec smoke tests.
-- `.github/workflows/ci.yml` – CI for Linux/macOS, Ruby 3.2–3.4, `rustfmt`, `clippy`, and `cargo-deny`.
+- `.github/workflows/ci.yml` – CI for Linux/macOS, Ruby 3.2–3.4, `rustfmt`, `clippy`.
 
 ## Tooling
 
@@ -80,7 +80,6 @@ cargo test --manifest-path Cargo.toml
 cargo fmt --manifest-path Cargo.toml -- --check
 cargo clippy --manifest-path Cargo.toml --all-targets -- -D warnings
 bundle exec rubocop
-cargo deny check --manifest-path Cargo.toml
 ```
 
 `bundle exec rake lint` runs RuboCop together with `cargo fmt` and `cargo clippy`.

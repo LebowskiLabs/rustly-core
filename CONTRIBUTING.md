@@ -6,7 +6,7 @@ predictable.
 ## Prerequisites
 
 - Ruby 3.2–3.4 (we recommend installing via rbenv or ruby-install).
-- Rust 1.85.0 (`rustup default 1.85.0`).
+- Rust 1.90.0 (`rustup default 1.90.0`).
 - Bundler 2.5+ (`gem install bundler`).
 
 ## Workflow
