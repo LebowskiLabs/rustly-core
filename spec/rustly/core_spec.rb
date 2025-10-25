@@ -1,8 +1,32 @@
 # frozen_string_literal: true
 
-require "json"
-
 describe Rustly::Core do
+  def build_errors_json(compiled, input, target_class = Struct.new)
+    Rustly::Core.build(compiled, input, target_class)
+    raise "expected validation to fail"
+  rescue Rustly::Core::ValidationError => e
+    JSON.generate(e.errors.messages)
+  end
+
+  def expect_json_entry(errors_json, entry)
+    expected = stringify_keys(entry)
+    parsed = JSON.parse(errors_json)
+    match = parsed.find { |item| expected.all? { |key, value| item[key] == value } }
+    expect(match).not_to be_nil, "expected JSON to include #{expected}, got #{parsed}"
+    expect(JSON.generate(match)).to be_json_as(expected)
+  end
+
+  def stringify_keys(value)
+    case value
+    when Hash
+      value.each_with_object({}) { |(k, v), acc| acc[k.to_s] = stringify_keys(v) }
+    when Array
+      value.map { |item| stringify_keys(item) }
+    else
+      value
+    end
+  end
+
   subject(:core) { described_class }
 
   let(:simple_schema_ast) do
@@ -21,10 +45,45 @@ describe Rustly::Core do
   end
 
   describe ".compile" do
+    let(:simple_struct) { Struct.new(:email) }
+
     it "creates a Rustly::Core::CompiledSchema typed object" do
       compiled = core.compile(simple_schema_ast)
       expect(compiled).to be_a(Rustly::Core::CompiledSchema)
       expect(compiled.summary).to include("email")
+    end
+
+    context "with redefined options" do
+      it "merges them with DEFAULT_OPTIONS during compile" do
+        expect(core).to receive(:native_compile)
+          .with(
+            simple_schema_ast,
+            {
+              strict: false,
+              extra: :allow,
+              input_mode: :auto,
+              freeze: :none,
+              store_attributes: false
+            }
+          )
+          .and_return(:compiled_schema)
+
+        result = core.compile(simple_schema_ast, { "strict" => false, extra: :allow })
+        expect(result).to eq(:compiled_schema)
+      end
+    end
+
+    context "when extra keys is allowed" do
+      it "allows extra keys when compiled with string extra option" do
+        compiled = core.compile(simple_schema_ast, { "extra" => :allow })
+        expect do
+          core.build(
+            compiled,
+            { email: "user@example.com", nickname: "buddy" },
+            simple_struct
+          )
+        end.not_to raise_error
+      end
     end
   end
 
@@ -39,34 +98,40 @@ describe Rustly::Core do
       expect(instance).not_to be_frozen
     end
 
-    it "defaults klass to Object" do
-      instance = core.build(compiled_simple, { email: "user@example.com" })
-      expect(instance).to be_a(Object)
-      expect(instance.instance_variable_get(:@email)).to eq("user@example.com")
+    context "when no base class provided" do
+      it "defaults klass to Object" do
+        instance = core.build(compiled_simple, { email: "user@example.com" })
+        expect(instance).to be_a(Object)
+        expect(instance.instance_variable_get(:@email)).to eq("user@example.com")
+      end
     end
 
-    it "populates @attributes when requested" do
-      compiled = core.compile(simple_schema_ast, store_attributes: true)
-      instance = core.build(compiled, { email: "user@example.com" }, simple_struct)
-      expect(JSON.generate(instance.instance_variable_get(:@attributes))).to be_json_as(
-        { "email" => "user@example.com" }
-      )
-    end
-
-    it "raises ValidationError when validation fails" do
-      expect do
-        core.build(compiled_simple, {}, simple_struct)
-      end.to raise_error(Rustly::Core::ValidationError) { |error|
-        expect(JSON.generate(error.errors.messages)).to be_json_including(
-          [
-            {
-              "path" => "email",
-              "code" => "required_missing",
-              "meta" => {}
-            }
-          ]
+    context "when raw attributes is requested" do
+      it "populates @attributes when requested" do
+        compiled = core.compile(simple_schema_ast, store_attributes: true)
+        instance = core.build(compiled, { email: "user@example.com" }, simple_struct)
+        expect(JSON.generate(instance.instance_variable_get(:@attributes))).to be_json_as(
+          { "email" => "user@example.com" }
         )
-      }
+      end
+    end
+
+    context "when some attributes fail validation" do
+      it "raises ValidationError when validation fails" do
+        expect do
+          core.build(compiled_simple, {}, simple_struct)
+        end.to raise_error(Rustly::Core::ValidationError) { |error|
+          expect(JSON.generate(error.errors.messages)).to be_json_including(
+            [
+              {
+                "path" => "email",
+                "code" => "required_missing",
+                "meta" => {}
+              }
+            ]
+          )
+        }
+      end
     end
   end
 
@@ -97,32 +162,6 @@ describe Rustly::Core do
                  :metadata, :tags, :status, :nickname)
     end
 
-    def build_errors_json(compiled, input, target_class = Struct.new)
-      Rustly::Core.build(compiled, input, target_class)
-      raise "expected validation to fail"
-    rescue Rustly::Core::ValidationError => e
-      JSON.generate(e.errors.messages)
-    end
-
-    def expect_json_entry(errors_json, entry)
-      expected = stringify_keys(entry)
-      parsed = JSON.parse(errors_json)
-      match = parsed.find { |item| expected.all? { |key, value| item[key] == value } }
-      expect(match).not_to be_nil, "expected JSON to include #{expected}, got #{parsed}"
-      expect(JSON.generate(match)).to be_json_as(expected)
-    end
-
-    def stringify_keys(value)
-      case value
-      when Hash
-        value.each_with_object({}) { |(k, v), acc| acc[k.to_s] = stringify_keys(v) }
-      when Array
-        value.map { |item| stringify_keys(item) }
-      else
-        value
-      end
-    end
-
     it "reports required_missing for absent fields" do
       errors = build_errors_json(
         compiled, { age: 21, rating: 3.0, active: true, role: :user, payload: {} }, target_class
@@ -130,7 +169,7 @@ describe Rustly::Core do
       expect_json_entry(errors, path: "email", code: "required_missing", meta: {})
     end
 
-    it "reports type_mismatch with expected meta" do
+    it "reports type_mismatch" do
       errors = build_errors_json(
         compiled,
         { email: "user@example.com", age: "old", rating: 2.0, active: true, role: :user,
@@ -140,14 +179,16 @@ describe Rustly::Core do
       expect_json_entry(errors, path: "age", code: "type_mismatch", meta: { expected: "int" })
     end
 
-    it "reports coerce_failed when coercion is impossible" do
-      errors = build_errors_json(
-        compiled_lenient,
-        { email: "user@example.com", age: "???", rating: 3.2, active: true, role: :user,
-          payload: {}, status: :draft },
-        target_class
-      )
-      expect_json_entry(errors, path: "age", code: "coerce_failed", meta: { from: "str" })
+    context "when coercion is impossible" do
+      it "reports coerce_failed" do
+        errors = build_errors_json(
+          compiled_lenient,
+          { email: "user@example.com", age: "???", rating: 3.2, active: true, role: :user,
+            payload: {}, status: :draft },
+          target_class
+        )
+        expect_json_entry(errors, path: "age", code: "coerce_failed", meta: { from: "str" })
+      end
     end
 
     it "reports value_not_in for enums" do
@@ -214,48 +255,17 @@ describe Rustly::Core do
       expect_json_entry(errors, path: "tags[1]", code: "type_mismatch", meta: { expected: "str" })
     end
 
-    it "accepts optional fields when nil" do
-      instance = described_class.build(
-        compiled,
-        { email: "user@example.com", age: 40, rating: 2.0, active: true, role: :user,
-          payload: {}, nickname: nil },
-        target_class
-      )
-      expect(instance).to be_a(target_class)
-      expect(instance.nickname).to be_nil
-    end
-  end
-
-  describe "Ruby wrapper" do
-    let(:simple_struct) { Struct.new(:email) }
-
-    it "merges options with DEFAULT_OPTIONS during compile" do
-      expect(core).to receive(:native_compile)
-        .with(
-          simple_schema_ast,
-          {
-            strict: false,
-            extra: :allow,
-            input_mode: :auto,
-            freeze: :none,
-            store_attributes: false
-          }
-        )
-        .and_return(:compiled_schema)
-
-      result = core.compile(simple_schema_ast, { "strict" => false, extra: :allow })
-      expect(result).to eq(:compiled_schema)
-    end
-
-    it "allows extra keys when compiled with string extra option" do
-      compiled = core.compile(simple_schema_ast, { "extra" => :allow })
-      expect do
-        core.build(
+    context "when field is optional" do
+      it "accepts nil" do
+        instance = described_class.build(
           compiled,
-          { email: "user@example.com", nickname: "buddy" },
-          simple_struct
+          { email: "user@example.com", age: 40, rating: 2.0, active: true, role: :user,
+            payload: {}, nickname: nil },
+          target_class
         )
-      end.not_to raise_error
+        expect(instance).to be_a(target_class)
+        expect(instance.nickname).to be_nil
+      end
     end
   end
 end
