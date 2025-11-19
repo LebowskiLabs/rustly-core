@@ -19,7 +19,6 @@ pub struct ErrorSet {
 }
 
 impl ErrorSet {
-    #[allow(dead_code)]
     pub fn new() -> Self {
         Self {
             entries: Vec::new(),
@@ -30,17 +29,14 @@ impl ErrorSet {
         Self { entries }
     }
 
-    #[allow(dead_code)]
     pub fn push(&mut self, entry: ErrorEntry) {
         self.entries.push(entry);
     }
 
-    #[allow(dead_code)]
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
 
-    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.entries.len()
     }

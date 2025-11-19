@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 # frozen_string_literal: true
 
 require "json"
@@ -83,7 +82,6 @@ input = generate_dataset(options[:count])
 json_input = JSON.generate(input) if options[:json]
 bench_opts = Rustly::Core::DEFAULT_OPTIONS
 
-# Warm-up
 assert_success Rustly::Core::Bench.prepare(input, :ruby), "warmup prepare"
 assert_success Rustly::Core::Bench.validate(compiled, input, bench_opts), "warmup validate"
 assert_success Rustly::Core::Bench.prepare(json_input, :json), "warmup json prepare" if options[:json]

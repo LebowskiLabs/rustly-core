@@ -116,6 +116,10 @@ impl SchemaArena {
         self.nodes.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+    }
+
     pub(crate) fn alloc(&mut self, node: Node) -> NodeId {
         let id = NodeId::new(self.nodes.len());
         self.nodes.push(node);

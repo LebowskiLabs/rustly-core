@@ -19,7 +19,6 @@ module Rustly
     class << self
       alias native_compile compile unless method_defined?(:native_compile)
       alias native_build build unless method_defined?(:native_build)
-      alias native_build_synced build_synced unless method_defined?(:native_build_synced)
 
       def compile(schema_ast, opts = {})
         normalized = DEFAULT_OPTIONS.merge(symbolize_keys(opts))
@@ -28,10 +27,6 @@ module Rustly
 
       def build(compiled_schema, input, klass = Object)
         native_build(compiled_schema, input, klass)
-      end
-
-      def build_synced(compiled_schema, input, klass = Object)
-        native_build_synced(compiled_schema, input, klass)
       end
 
       private

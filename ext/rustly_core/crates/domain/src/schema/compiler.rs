@@ -1,16 +1,12 @@
-use super::compiled::{CompiledSchema, build_materialize_plan};
+use super::compiled::{build_materialize_plan, CompiledSchema};
 use super::ir::{
     CollectionConstraints, ExtraBehavior, FloatConstraints, IntConstraints, InternTable, Node,
     NodeId, PrimitiveType, SchemaArena, SchemaIr, StringConstraints, StructField,
     StructFieldPresence,
 };
-use crate::ruby_helpers::truthy;
 use ordered_float::OrderedFloat;
-use rb_sys::VALUE;
-use rb_sys::bindings::*;
 use serde_json::{Map, Value};
 use std::collections::HashSet;
-use std::ffi::CStr;
 use thiserror::Error;
 
 const ROOT_PATH: &str = "$";
@@ -18,21 +14,23 @@ const ROOT_PATH: &str = "$";
 pub struct SchemaCompiler;
 
 impl SchemaCompiler {
-    pub unsafe fn compile(schema_ast: VALUE) -> Result<CompiledSchema, CompileError> {
-        let json_source = unsafe { RubyJson::coerce(schema_ast)? };
-        let json_value: Value = serde_json::from_str(&json_source)?;
-        let document = SchemaDocument::from_value(&json_value)?;
-        let summary = summary_from_value(&json_value);
+    /// Compile a schema from a JSON string.
+    pub fn from_json_str(source: &str) -> Result<CompiledSchema, CompileError> {
+        let json_value: Value = serde_json::from_str(source)?;
+        Self::compile(&json_value)
+    }
+
+    /// Compile a schema from a JSON value.
+    pub fn compile(schema: &Value) -> Result<CompiledSchema, CompileError> {
+        let document = SchemaDocument::from_value(schema)?;
         let ir = build_ir(&document)?;
         let plan = build_materialize_plan(&ir);
-        Ok(CompiledSchema::new(summary, ir, plan))
+        Ok(CompiledSchema::new(ir, plan))
     }
 }
 
 #[derive(Debug, Error)]
 pub enum CompileError {
-    #[error("failed to convert schema AST to JSON: {0}")]
-    JsonConversion(String),
     #[error("invalid schema at {path}: {message}")]
     InvalidSchema { path: String, message: String },
     #[error(transparent)]
@@ -85,57 +83,6 @@ struct FieldExpr {
     name: String,
     presence: StructFieldPresence,
     ty: TypeExpr,
-}
-
-struct RubyJson;
-
-impl RubyJson {
-    unsafe fn coerce(value: VALUE) -> Result<String, CompileError> {
-        if truthy(unsafe { rb_obj_is_kind_of(value, rb_cString) }) {
-            return unsafe { Self::ruby_string(value) };
-        }
-
-        unsafe { rb_require(c"json".as_ptr()) };
-        let json_module = unsafe { rb_const_get(rb_cObject, rb_intern(c"JSON".as_ptr())) };
-        let generate_id = unsafe { rb_intern(c"generate".as_ptr()) };
-        let mut args = [value];
-        let result = unsafe { rb_funcallv(json_module, generate_id, 1, args.as_mut_ptr()) };
-
-        if !truthy(unsafe { rb_obj_is_kind_of(result, rb_cString) }) {
-            return Err(CompileError::JsonConversion(
-                "JSON.generate returned a non-string value".into(),
-            ));
-        }
-
-        unsafe { Self::ruby_string(result) }
-    }
-
-    unsafe fn ruby_string(value: VALUE) -> Result<String, CompileError> {
-        let mut str_value = value;
-        let ptr = unsafe { rb_string_value_cstr(&mut str_value) };
-        if ptr.is_null() {
-            return Err(CompileError::JsonConversion(
-                "Ruby string conversion yielded null pointer".into(),
-            ));
-        }
-        Ok(unsafe { CStr::from_ptr(ptr) }
-            .to_string_lossy()
-            .into_owned())
-    }
-}
-
-fn summary_from_value(value: &Value) -> String {
-    match value {
-        Value::Object(_) | Value::Array(_) => {
-            let mut summary = value.to_string();
-            if summary.len() > 200 {
-                summary.truncate(200);
-                summary.push('…');
-            }
-            summary
-        }
-        _ => value.to_string(),
-    }
 }
 
 fn build_ir(document: &SchemaDocument) -> Result<SchemaIr, CompileError> {
@@ -443,7 +390,6 @@ fn parse_struct_type(
     path: &str,
 ) -> Result<TypeExpr, CompileError> {
     if inline_type.is_some() {
-        // If a nested type expression was provided, treat it as options override
         if let Some(object) = inline_type.and_then(|v| v.as_object()) {
             for (key, value) in object {
                 options.insert(key.clone(), value.clone());

@@ -69,7 +69,6 @@ def run!
 
   puts "Benchmarking #{dataset.size} records"
 
-  # Memory comparison - Single Threaded
   puts "\n=== Memory Comparison (Single Threaded) ==="
   Benchmark.memory do |x|
     x.report("Dry") do
@@ -98,7 +97,6 @@ def run!
     x.compare!
   end
 
-  # Speed comparison - Single Threaded
   puts "\n=== Speed Comparison (Single Threaded) ==="
   Benchmark.bmbm do |x|
     x.report("Rust") do
@@ -125,12 +123,11 @@ def run!
     end
   end
 
-  # Speed comparison - Parallel (10 threads)
   puts "\n=== Speed Comparison (10 Threads) ==="
   Benchmark.bmbm do |x|
-    x.report("Rust (10 threads, synced)") do
+    x.report("Rust (10 threads)") do
       Parallel.each(dataset, in_threads: 10) do |payload|
-        Rustly::Core.build_synced(compiled_schema, payload, RustlyUser)
+        Rustly::Core.build(compiled_schema, payload, RustlyUser)
       end
     end
 

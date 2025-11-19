@@ -1,23 +1,30 @@
 [package]
-authors      = ["dude <skuf@justregulardude.ru>"]
-edition      = "2024"
-license      = "MIT"
-name         = "rustly-core"
-publish      = false
-rust-version = "1.90"
-version      = "0.1.0"
-
-[lib]
-crate-type = ["cdylib"]
+authors.workspace      = true
+description.workspace  = true
+edition.workspace      = true
+license.workspace      = true
+name                   = "rustly-core"
+publish                = false
+repository.workspace   = true
+rust-version.workspace = true
+version.workspace      = true
 
 [dependencies]
-bumpalo       = { version = "3.19.0", features = ["collections"] }
-ordered-float = "5.1.0"
-rb-sys        = { version = "0.9.117", features = ["link-ruby", "stable-api"] }
-serde         = { version = "1.0.228", features = ["derive"] }
-serde_json    = "1.0.145"
-smallvec      = "1.13.2"
-thiserror     = "2.0.17"
+rustly-core-domain  = { path = "./crates/domain" }
+rustly-core-gateway = { path = "./crates/gateway" }
+
+bumpalo.workspace       = true
+ordered-float.workspace = true
+rb-sys                  = { workspace = true, features = ["link-ruby", "stable-api"] }
+serde.workspace         = true
+serde_json.workspace    = true
+smallvec.workspace      = true
+thiserror.workspace     = true
 
 [build-dependencies]
 rb-sys-build = "0.9.117"
+
+[profile.release]
+codegen-units = 1
+lto           = true
+strip         = true

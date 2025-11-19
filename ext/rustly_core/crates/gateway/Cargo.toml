@@ -1,0 +1,17 @@
+[package]
+name = "rustly-core-gateway"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description.workspace = true
+publish = false
+
+[dependencies]
+rustly-core-domain = { path = "../domain" }
+rb-sys.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

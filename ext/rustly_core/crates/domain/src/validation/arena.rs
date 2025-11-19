@@ -1,4 +1,4 @@
-use bumpalo::{Bump, collections::Vec as BumpVec};
+use bumpalo::{collections::Vec as BumpVec, Bump};
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -18,7 +18,6 @@ impl ArenaInner {
     }
 }
 
-/// Arena wrapper that centralizes bump allocation for transient validation data.
 #[allow(clippy::arc_with_non_send_sync)]
 #[derive(Clone, Debug)]
 pub struct Arena {
